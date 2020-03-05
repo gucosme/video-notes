@@ -37,7 +37,7 @@ export default {
       console.log(`Room ${room.sid} - ${room.name} connected`);
 
       this.room = room;
-      // video.attachRoomListeners(this.room, videoEl);
+      video.attachRoomListeners(this.room, this.$refs.video);
     } catch (ex) {
       console.log(ex.name,ex.message);
     }
