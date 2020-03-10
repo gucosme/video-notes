@@ -1,8 +1,16 @@
 <template>
   <div id="app">
-    <h2>Video Notes</h2>
-    <div ref="video" />
-    <div ref="audio" />
+    <h2>Claxroom</h2>
+
+    <div class="streams">
+
+      <template v-for="participant in participants">
+        <div class="participant" :key="participant.sid">
+          <div :ref="participant.sid" />
+            <span class="participant-name">{{ participant.identity }}</span>
+        </div>
+      </template>
+    </div>
   </div>
 </template>
 
@@ -14,20 +22,29 @@ export default {
   name: 'App',
   data: () => ({
     room: null,
+    participants: []
   }),
+  watch: {
+    participants: function(val, oldVal) {
+      console.log(val.length, oldVal.length);
+    },
+  },
   methods: {
-    attachMedia(media) {
-      const videoEl = this.$refs[media.kind];
-      videoEl.appendChild(media.attach());
+    addParticipant(p) {
+      this.participants.push(p);
+    },
+    removeParticipants(p) {
+      this.participants.splice(this.participants.indexOf(p), 1);
+    },
+    attachMedia(media, ref) {
+      const el = this.$refs[ref][0] || this.$refs[ref];
+      el.appendChild(media.attach());
     }
   },
   async mounted () {
     try {
       const token = await getToken();
       const localTracks = await video.createLocalTrack();
-      console.log(localTracks);
-
-      for (const track of localTracks) this.attachMedia(track);
 
       const room = await video.connect(token, {
         name: 'room01',
@@ -37,7 +54,7 @@ export default {
       console.log(`Room ${room.sid} - ${room.name} connected`);
 
       this.room = room;
-      video.attachRoomListeners(this.room, this.$refs.video);
+      video.attachRoomListeners(this.room, this.attachMedia, this.addParticipant, this.removeParticipants, this.$nextTick);
     } catch (ex) {
       console.log(ex.name,ex.message);
     }
@@ -53,7 +70,20 @@ export default {
   color: #2c3e50;
 }
 
-.header {
-  font-size: 1.5rem;
+.streams {
+  display: grid;
+}
+
+.participant {
+  position: relative;
+  min-height: 480px;
+}
+
+.participant-name {
+  position: absolute;
+  z-index: 1;
+  bottom: 0;
+  margin: .5rem;
+  color: white;
 }
 </style>

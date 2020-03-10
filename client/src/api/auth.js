@@ -1,7 +1,12 @@
-const BASE_URL = "http://192.168.88.56:3000";
+const BASE_URL = "http://localhost:3001";
 
-export async function getToken() {
-  const res = await fetch(`${BASE_URL}/token`);
+export async function getToken(name = "James") {
+  console.log(BASE_URL);
+  const res = await fetch(`${BASE_URL}/token`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ name })
+  });
   const { token } = await res.json();
 
   return token;

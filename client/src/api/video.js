@@ -15,18 +15,34 @@ const createLocalTrack = (width = 640) => {
   });
 };
 
-const attachRoomListeners = function(room, el) {
-  room.on("participantConnected", participant => {
-    console.log(`Participant ${participant.identity} connected`);
-    for (const pub of participant.tracks) {
-      if (pub.isSubscribed) {
-        el.appendChild(pub.track.attach());
+const attachRoomListeners = function(room, attachM, addP, removeP, nextTick) {
+  const attachParticipant = (p, local = false) => {
+    addP(p);
+
+    nextTick(() => {
+      for (const pub of p.tracks.values()) {
+        if (pub.isSubscribed || local) attachM(pub.track, p.sid);
+
+        pub.on("subscribed", track => {
+          attachM(track, p.sid);
+        });
       }
-    }
+    });
+  };
+
+  attachParticipant(room.localParticipant, true);
+  room.participants.forEach(p => attachParticipant(p));
+
+  room.on("participantConnected", participant => {
+    addP(participant);
 
     participant.on("trackSubscribed", track => {
-      el.appendChild(track.attach());
+      attachM(track, participant.sid);
     });
+  });
+
+  room.on("participantDisconnected", participant => {
+    removeP(participant);
   });
 };
 
