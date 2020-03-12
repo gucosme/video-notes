@@ -1,16 +1,24 @@
 <template>
   <div id="app">
-    <h2>Claxroom</h2>
+    <nav class="header">
+      <h2>
+        <fa-icon icon="shapes" class="mr-2" />
+          CLA<span class="text-gray-900">SS</span>ROOM
+      </h2>
+    </nav>
 
-    <div class="streams">
-
+    <div class="main">
       <template v-for="participant in participants">
-        <div class="participant" :key="participant.sid">
-          <div :ref="participant.sid" />
-            <span class="participant-name">{{ participant.identity }}</span>
+        <div class="main-content" :key="participant.sid" :ref="participant.sid">
+          <ContentInfo :name="participant.identity" />
         </div>
       </template>
     </div>
+    <ParticipantsList :participants="participants" class="sidebar" />
+    <div class="settings">
+      <fa-icon icon="cog" />
+    </div>
+    <footer>Made with VueJS and Twilio-Video</footer>
   </div>
 </template>
 
@@ -18,22 +26,26 @@
 import { getToken } from './api/auth';
 import video from './api/video';
 
+import ParticipantsList from './components/ParticipantsList.vue';
+import ContentInfo from './components/ContentInfo.vue';
+
 export default {
   name: 'App',
+  components: {
+    ParticipantsList,
+    ContentInfo
+  },
   data: () => ({
     room: null,
-    participants: []
+    participants: [],
+    devices: [],
   }),
-  watch: {
-    participants: function(val, oldVal) {
-      console.log(val.length, oldVal.length);
-    },
-  },
   methods: {
     addParticipant(p) {
       this.participants.push(p);
     },
     removeParticipants(p) {
+      console.log(p.identity);
       this.participants.splice(this.participants.indexOf(p), 1);
     },
     attachMedia(media, ref) {
@@ -42,9 +54,13 @@ export default {
     }
   },
   async mounted () {
+    const { query } = this.$route;
+
     try {
-      const token = await getToken();
-      const localTracks = await video.createLocalTrack();
+      this.devices = await navigator.mediaDevices.enumerateDevices()
+
+      const token = await getToken(query.name);
+      const localTracks = await video.createLocalTrack(query.type === 'teacher');
 
       const room = await video.connect(token, {
         name: 'room01',
@@ -64,26 +80,60 @@ export default {
 
 <style>
 #app {
-  font-family: Avenir, Helvetica, Arial, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  color: #2c3e50;
+  @apply font-sans subpixel-antialiased h-screen;
+  @apply grid grid-cols-4 gap-1;
+  grid-template-rows: 3rem auto 2rem 2rem;
+  grid-template-areas:
+    "header header header header"
+    "main main main sidebar"
+    "main main main settings"
+    "footer footer footer footer";
 }
 
-.streams {
-  display: grid;
+.main-content > video {
+  @apply h-full;
+  place-self: center;
 }
 
-.participant {
-  position: relative;
-  min-height: 480px;
+.main-content > audio {
+  display: none;
 }
 
-.participant-name {
-  position: absolute;
-  z-index: 1;
-  bottom: 0;
-  margin: .5rem;
-  color: white;
+</style>
+
+<style scoped>
+.header {
+  @apply grid shadow font-bold text-gray-900;
+  grid-area: header;
+  place-items: center;
+  color: #1865f2;
+  font-family: 'Permanent Marker', cursive;
 }
+
+.sidebar {
+  grid-area: sidebar;
+}
+
+.settings {
+  @apply grid pr-2;
+  grid-area: settings;
+  align-content: center;
+  justify-content: end;
+}
+
+footer {
+  @apply grid bg-gray-800 text-gray-500 text-xs border-t-2;
+  grid-area: footer;
+  place-items: center;
+}
+
+.main {
+  grid-area: main;
+}
+
+.main-content {
+  @apply relative h-full;
+  @apply grid grid-cols-1 grid-rows-1;
+}
+
 </style>

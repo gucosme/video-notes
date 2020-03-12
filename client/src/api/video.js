@@ -8,10 +8,10 @@ const connect = function(token, opts) {
   });
 };
 
-const createLocalTrack = (width = 640) => {
+const createLocalTrack = (hasVideo = false, width = 720) => {
   return Video.createLocalTracks({
-    audio: true,
-    video: { width }
+    audio: false,
+    video: hasVideo ? { width } : false
   });
 };
 
@@ -21,6 +21,7 @@ const attachRoomListeners = function(room, attachM, addP, removeP, nextTick) {
 
     nextTick(() => {
       for (const pub of p.tracks.values()) {
+        console.log(pub.track);
         if (pub.isSubscribed || local) attachM(pub.track, p.sid);
 
         pub.on("subscribed", track => {
